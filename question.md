@@ -2,8 +2,9 @@
 
 Tables available: `gold_company_quarter`, `portfolio_summary`, `silver_revenue`, `v_company_quarter_facts`, `v_published_summaries`
 
-## 1. Exploring the data quality issue (Task 1)
 
+## 1. Exploring the data quality issue (Task 1)
+- Summarise C-014 for 2025-Q2.
 - Show me all rows in silver_revenue for company C-014
 - Are there any companies with duplicate revenue_usd values across different quarters?
 - Which companies have more than one row per quarter in silver_revenue?
