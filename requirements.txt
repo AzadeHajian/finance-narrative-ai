@@ -1,0 +1,32 @@
+# LLM providers
+anthropic
+langchain-anthropic
+openai
+langchain-openai
+
+# LangChain core
+langchain
+langchain-core
+langchain-community
+langchain-mcp-adapters
+langchain-classic
+
+# LangGraph (replaces AgentExecutor)
+langgraph
+langgraph-prebuilt
+
+# MCP
+fastmcp
+mcp
+
+# Database
+supabase
+
+# Streamlit UI
+streamlit
+
+# Environment
+python-dotenv
+
+# LangSmith tracing
+langsmith
