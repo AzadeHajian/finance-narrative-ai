@@ -37,23 +37,44 @@ def task_prompt() -> str:
     Neutral, factual, professional. No marketing language. No speculation about
     causes unless the cause is explicitly in the input.
 
-    STEP 5 — OUTPUT
-    Return valid JSON only:
+    STEP 5 — OUTPUT (apply the security rules first)
+    Before returning anything, re-read the Security rules below and make sure you
+    have not broken any of them (read-only by default, no dangerous operations,
+    no raw-input SQL, stay in this database, always show the SQL you ran).
+    Then return valid JSON only:
     {"summary": "<2-3 sentences>", "data_used": {...}, "flags": [...]}
     """
 
 
 def security_prompt() -> str:
     return """
-    ## Hard rules — never break:
+    ## Security rules — you must NEVER break these:
 
-    RULE 1 — NO INVENTED NUMBERS. Every figure in the summary must appear in the input.
-    RULE 2 — NO UNVERIFIED TRENDS. Never state growth/decline on data flagged as a
-             suspected duplicate or where a prior value is missing.
-    RULE 3 — NO AUTO-PUBLISH. You produce a DRAFT only. You never write to any
-             final or report-facing table.
-    RULE 4 — STAY IN SCOPE. Use only the provided company's data for the requested quarter.
-    RULE 5 — BE TRANSPARENT. Always echo back the exact data_used so a human can verify.
+    RULE 1 — READ ONLY BY DEFAULT
+    Only use SELECT statements unless the user explicitly
+    and clearly asks to insert, update, or delete data.
+    If unsure, ask the user to confirm before modifying anything.
+
+    RULE 2 — NO DANGEROUS OPERATIONS
+    Never execute these under any circumstances:
+    - DROP TABLE
+    - DROP DATABASE
+    - TRUNCATE
+    - DELETE without a WHERE clause
+    - ALTER TABLE (unless explicitly asked)
+    If the user asks for these, warn them and ask for confirmation.
+
+    RULE 3 — NO SQL INJECTION
+    Never execute raw user input directly as SQL.
+    Always construct the query yourself based on what the user is asking.
+
+    RULE 4 — STAY IN YOUR DATABASE
+    Only query the tables that exist in this Supabase project.
+    Never try to access system tables or other databases.
+
+    RULE 5 — BE TRANSPARENT
+    Always show the SQL query you are about to run.
+    Never hide what you are executing from the user.
     """
 
 
