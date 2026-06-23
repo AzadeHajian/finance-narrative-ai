@@ -12,12 +12,6 @@ Every answer is a **draft for human review**: the agent returns structured JSON
 (`summary` + `data_used` + `flags`) and is explicitly forbidden from publishing
 to any report-facing table.
 
-> The architecture is the in-house [`sql-agent`](../sql-agent) project, repurposed
-> for this database and prompt: same `llm/` provider abstraction, same FastMCP
-> Supabase tool server (`tools/supabase_tool.py`), same MCP client + ReAct agent
-> (`mcp_server/client.py`), same Streamlit shell (`main.py`). The database already
-> exists in Supabase.
-
 ## ✨ Features
 
 - **Structured data → narrative** — ask for a company-quarter, get a 2–3 sentence
