@@ -7,11 +7,9 @@
 
 import sys
 import os
-import json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
-import pandas as pd
 
 # On Streamlit Community Cloud there is no .env file — secrets are configured
 # via the app's "Secrets" dashboard instead. Accessing st.secrets (if a
@@ -21,105 +19,6 @@ import pandas as pd
 st.secrets.load_if_toml_exists()
 
 from agent import SQLAgent
-
-# -----------------------------------------------------------
-# Pretty rendering of the agent's JSON reply
-# -----------------------------------------------------------
-NICE_LABELS = {
-    "revenue_usd": "Revenue (USD)", "headcount": "Headcount",
-    "esg_e": "ESG – Environmental", "esg_s": "ESG – Social",
-    "esg_g": "ESG – Governance", "reported_date": "Reported date",
-    "source_system": "Source", "sector": "Sector", "country": "Country",
-}
-
-
-def _extract_json(text: str):
-    """Return (dict, json_substring) if the reply contains a JSON object, else (None, None)."""
-    t = text.strip()
-    candidate = None
-    if "" in t:                                   # strip json ...  fences
-        for part in t.split(""):
-            p = part.strip()
-            p = p[4:].strip() if p.lower().startswith("json") else p
-            if p.startswith("{"):
-                candidate = p
-                break
-    if candidate is None:                            # fall back: first { ... last }
-        i, j = t.find("{"), t.rfind("}")
-        if i != -1 and j != -1 and j > i:
-            candidate = t[i:j + 1]
-    if candidate is None:
-        return None, None
-    try:
-        return json.loads(candidate), candidate
-    except Exception:
-        return None, None
-
-
-def render_markdown_with_code(text: str):
-    """Render text, turning sql ... fences into code blocks (original behaviour)."""
-    parts = text.split("```")
-    for i, part in enumerate(parts):
-        if i % 2 == 0:
-            if part.strip():
-                st.markdown(part)
-        else:
-            lines = part.strip().split("\n")
-            language = lines[0].lower() if lines else ""
-            if language in ["sql", "postgresql"]:
-                sql_code = "\n".join(lines[1:]) if len(lines) > 1 else part
-                st.code(sql_code, language="sql")
-            else:
-                st.code(part)
-
-
-def render_summary(content: str) -> bool:
-    """Render the agent's JSON reply nicely. Returns True if it was JSON."""
-    data, json_str = _extract_json(content)
-    if not data or "summary" not in data:
-        return False
-
-    # 1) draft badge + the narrative
-    st.markdown("🟡 *DRAFT — pending human review*")
-    st.markdown(f"#### 📝 Summary\n{data['summary']}")
-
-    # 2) the numbers behind it, as a table
-    used = data.get("data_used")
-    if isinstance(used, dict) and used:
-        st.markdown("##### 🔢 Data used")
-        try:
-            if all(isinstance(v, dict) for v in used.values()):
-                df = pd.DataFrame(used)               # columns = quarters, rows = metrics
-            else:
-                df = pd.DataFrame({"value": used})    # flat single-quarter dict
-            df.index = [NICE_LABELS.get(i, i) for i in df.index]
-            df = df.astype(object)                    # so formatted strings can replace ints
-            if "Revenue (USD)" in df.index:           # add thousands separators
-                df.loc["Revenue (USD)"] = df.loc["Revenue (USD)"].map(
-                    lambda v: f"{int(float(v)):,}"
-                    if str(v).replace(".", "", 1).replace("-", "", 1).isdigit() else v)
-            st.table(df)
-        except Exception:
-            st.json(used)
-
-    # 3) data-quality flags
-    flags = data.get("flags") or []
-    if flags:
-        for f in flags:
-            st.warning(f"🚩 {f}")
-    else:
-        st.success("✅ No data-quality flags")
-
-    # 4) anything else the agent said (e.g. the SQL it ran) — keep it for transparency
-    rest = content.replace(json_str, "").strip().strip("`").strip() if json_str else ""
-    if rest and len(rest) > 15:
-        with st.expander("🔎 Agent steps / SQL"):
-            render_markdown_with_code(rest)
-
-    # 5) raw JSON for full transparency / audit
-    with st.expander("View raw JSON"):
-        st.json(data)
-    return True
 
 # -----------------------------------------------------------
 # Page config — must be first Streamlit command
@@ -280,15 +179,15 @@ st.markdown("---")
 with st.expander("💡 Example requests & tips", expanded=False):
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown("*📋 Summarise*")
+        st.markdown("**📋 Summarise**")
         st.code("Summarise C-014 for 2025-Q2")
         st.code("Write the quarterly narrative for C-022, 2025-Q1")
     with col2:
-        st.markdown("*🔍 Compare*")
+        st.markdown("**🔍 Compare**")
         st.code("Compare C-014's Q1 and Q2 2025 revenue")
         st.code("How did C-014's headcount change in 2025-Q3?")
     with col3:
-        st.markdown("*📊 ESG & quality*")
+        st.markdown("**📊 ESG & quality**")
         st.code("Summarise C-014's ESG trend for 2025-Q2")
         st.code("Flag any duplicate revenue for C-014")
 
@@ -308,9 +207,19 @@ for message in st.session_state.chat_history:
 
     elif role == "assistant":
         with st.chat_message("assistant", avatar="🗄️"):
-            # Try the nice, structured view first; fall back to the old rendering.
-            if not render_summary(content):
-                render_markdown_with_code(content)
+            parts = content.split("```")
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    if part.strip():
+                        st.markdown(part)
+                else:
+                    lines = part.strip().split("\n")
+                    language = lines[0].lower() if lines else ""
+                    if language in ["sql", "postgresql"]:
+                        sql_code = "\n".join(lines[1:]) if len(lines) > 1 else part
+                        st.code(sql_code, language="sql")
+                    else:
+                        st.code(part)
 
 # -----------------------------------------------------------
 # Query input — pinned to the bottom, submits on Enter
@@ -360,7 +269,7 @@ if user_query:
 
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
-            st.info("💡 *Troubleshooting:*\n- Check your .env keys\n- Make sure Supabase is reachable\n- Check the terminal for detailed errors")
+            st.info("💡 **Troubleshooting:**\n- Check your .env keys\n- Make sure Supabase is reachable\n- Check the terminal for detailed errors")
 
     st.rerun()
 
@@ -392,11 +301,11 @@ if st.session_state.current_result:
 st.markdown("---")
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.markdown("*🗄️ Database*")
+    st.markdown("**🗄️ Database**")
     st.markdown("Supabase • PostgreSQL")
 with col2:
-    st.markdown("*🤖 Powered by*")
+    st.markdown("**🤖 Powered by**")
     st.markdown("Claude • GPT-4o • LangChain")
 with col3:
-    st.markdown("*📝 Finance Quarterly Report*")
+    st.markdown("**📝 Finance Quarterly Report**")
     st.markdown("AI narrative summaries · human-reviewed")

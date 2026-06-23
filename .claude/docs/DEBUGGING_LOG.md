@@ -192,22 +192,6 @@ to Streamlit Community Cloud".
 
 ---
 
-## 2026-06-23 — `NameError` on Streamlit Cloud at `main.py:11` (`_file_`)
-
-**Symptom:** App deployed to Streamlit Community Cloud crashes on startup
-with a redacted `NameError`. Traceback points to `main.py`, line 11:
-`sys.path.insert(0, os.path.dirname(os.path.abspath(_file_)))`.
-
-**Root cause:** Typo — `_file_` (single underscores) instead of Python's
-builtin `__file__` (double underscores). `_file_` is not defined, so
-referencing it raises `NameError`.
-
-**Fix/status:** **FIXED.** Corrected `_file_` → `__file__` in `main.py:11`.
-
-**Files involved:** `main.py`.
-
----
-
 ## Template for new entries
 
 ```
