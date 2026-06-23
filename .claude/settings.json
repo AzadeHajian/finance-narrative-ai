@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python --version)",
+      "Bash(.venv/bin/pip list *)",
+      "Bash(.venv/bin/python -m py_compile *)",
+      "Bash(python -m py_compile *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\azade\\ai_agent\\finance-narrative-ai\\.claude"
+    ]
+  }
+}
