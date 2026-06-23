@@ -163,6 +163,7 @@ subprocess — no separate terminal needed.
 
 ## 📚 More documentation
 
+- [`answer.md`](answer.md) — design write-up (Questions 4–7: end-to-end design, sample prompt, risks & guardrails, the no-publish-without-review mechanism)
 - [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — project guide index
 - [`.claude/docs/PROJECT_OVERVIEW.md`](.claude/docs/PROJECT_OVERVIEW.md) — folder-by-folder breakdown
 - [`.claude/docs/ARCHITECTURE.md`](.claude/docs/ARCHITECTURE.md) — data flow, provider abstraction, MCP
