@@ -19,6 +19,40 @@ the validated numbers for one company-quarter, writes a 2–3 sentence draft as
 JSON, and that draft is stored as `draft` and must be reviewed/edited/approved by
 a human before any report can read it.
 
+```mermaid
+flowchart TD
+    A[("🗄️ <b>silver_revenue</b><br/><i>raw · append-only · has stale duplicates</i>")]
+    B[("✨ <b>gold_company_quarter</b><br/><i>curated · one row per company-quarter</i>")]
+    C["📊 <b>facts</b><br/><i>this quarter + prior quarter<br/>revenue · headcount · ESG</i>"]
+    D{{"🤖 <b>LLM agent</b><br/>ReAct over MCP SQL tools<br/><i>reads facts → writes JSON draft</i>"}}
+    E["📝 <b>portfolio_summary</b><br/>status = <code>draft</code>"]
+    F["✅ <b>portfolio_summary</b><br/>status = <code>approved</code>"]
+    G[["📤 <b>published summaries</b><br/><i>approved only — reports read this</i>"]]
+
+    A -->|"dedup in SQL<br/>DISTINCT ON · latest load"| B
+    B -->|"prior-quarter lookup<br/>LAG()"| C
+    C --> D
+    D -->|"save as draft"| E
+    E -->|"👤 human reviews · edits · approves<br/>+ DB CHECK(approved ⟹ approved_by)"| F
+    F --> G
+
+    classDef raw  fill:#FEE2E2,stroke:#EF4444,stroke-width:2px,color:#7F1D1D;
+    classDef gold fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#78350F;
+    classDef fact fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
+    classDef llm  fill:#DCFCE7,stroke:#22C55E,stroke-width:2px,color:#14532D;
+    classDef gate fill:#FFEDD5,stroke:#F97316,stroke-width:2px,color:#7C2D12;
+    classDef pub  fill:#EDE9FE,stroke:#8B5CF6,stroke-width:2px,color:#4C1D95;
+
+    class A raw;
+    class B gold;
+    class C fact;
+    class D llm;
+    class E,F gate;
+    class G pub;
+```
+
+*Plain-text fallback (for viewers that don't render Mermaid):*
+
 ```
 silver_revenue ──dedup in SQL──▶ gold_company_quarter ──prior-quarter lookup──▶ facts
                                                                                   │
